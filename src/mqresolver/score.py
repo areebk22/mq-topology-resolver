@@ -14,7 +14,7 @@ from .model import Model
 
 MAX_HOPS = 7          # alias + remote queue + transmission queue + sender + receiver + local queue + alias
 CROSS_HOPS = 5        # remote queue, transmission queue, sender, receiver, local queue
-SIMPLICITY = ("routing_depth", "app_sprawl", "channel_load", "object_overhead")
+SIMPLICITY = ("routing_depth", "app_sprawl", "channel_load", "object_overhead", "qm_footprint")
 
 
 @dataclass
@@ -29,6 +29,7 @@ class ScoreInputs:
     objects: int              # queue definitions + transmission queues + channel definitions required
     hhi: float                # sum of squared endpoint shares per QM
     policy: float             # weighted policy violation, 0..1
+    n_qms: int = 0            # queue managers hosting applications
 
 
 def dimensions(si: ScoreInputs) -> dict[str, float]:
@@ -38,6 +39,7 @@ def dimensions(si: ScoreInputs) -> dict[str, float]:
         "app_sprawl": 1 - si.n_apps / si.n_connections if si.n_connections else 0.0,
         "channel_load": min(1.0, si.qm_pairs / si.comm_pairs) if si.comm_pairs else 0.0,
         "object_overhead": max(0.0, 1 - si.logical_queues / si.objects) if si.objects else 0.0,
+        "qm_footprint": min(1.0, si.n_qms / si.n_apps) if si.n_apps else 0.0,
         "blast_radius": min(1.0, si.hhi),
         "policy_violations": min(1.0, max(0.0, si.policy)),
     }
@@ -79,6 +81,7 @@ def inputs_from_model(model: Model, policy_violation: float) -> ScoreInputs:
         objects=len(model.definitions) + 3 * len(model.links),
         hhi=_hhi(load.values()),
         policy=policy_violation,
+        n_qms=len(model.qm_apps),
     )
 
 
@@ -158,7 +161,7 @@ def inputs_from_assignment(base: FlowBase, assign: dict[str, str], policy_violat
         n_apps=len(base.apps), n_connections=len(base.apps), path_weight=paths, hop_sum=hops,
         qm_pairs=len({tuple(sorted(l)) for l in links}), comm_pairs=base.comm_pairs,
         logical_queues=base.logical_queues, objects=base.logical_queues + remote_defs + 3 * len(links),
-        hhi=_hhi(load.values()), policy=policy_violation)
+        hhi=_hhi(load.values()), policy=policy_violation, n_qms=len(set(assign.values())))
 
 
 def sensitivity(si_before: ScoreInputs, si_after: ScoreInputs) -> list[dict]:
@@ -184,6 +187,7 @@ def describe(si: ScoreInputs, weights: dict[str, float]) -> dict:
             "communicating_app_pairs": si.comm_pairs,
             "logical_queues": si.logical_queues,
             "managed_objects": si.objects,
+            "queue_managers": si.n_qms,
             "effective_qms": round(1 / si.hhi, 1) if si.hhi else 0,
             "policy_violation": round(si.policy, 4),
         },
