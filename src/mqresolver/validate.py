@@ -30,8 +30,9 @@ def _flow_counts(model: Model) -> tuple[Counter, Counter, Counter]:
 
 
 def validate(as_is: Model, target_df: pd.DataFrame, channels: list[dict], comp: Compiled, config: Config,
-             gateways: set[str]) -> dict:
-    tgt = build_model(target_df, as_is.attr_names)
+             gateways: set[str], target_model: Model | None = None) -> dict:
+    """`target_model` may be passed to save rebuilding it; it must come from build_model(target_df)."""
+    tgt = target_model if target_model is not None else build_model(target_df, as_is.attr_names)
     checks: list[dict] = []
 
     def check(cid: str, rule: str, problems: list[str]) -> None:

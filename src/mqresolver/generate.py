@@ -8,7 +8,7 @@ import pandas as pd
 
 from .config import Config
 from .ingest import QUEUE_ATTRS, ROLE_ORIG, Inventory
-from .model import Model, queue_key
+from .model import Model, Records, queue_key
 from .optimise import Result
 
 
@@ -33,7 +33,7 @@ def _claim(registry: dict, qm: str, name: str, owner, suffix: str) -> str:
 
 def generate(inv: Inventory, model: Model, result: Result, config: Config) -> Target:
     assign, gw = result.assignment, result.gateway_map
-    recs = [r for r in inv.df.to_dict("records") if r["app_id"] and r.get("queue_usage") != "Transmission"]
+    recs = Records(inv.df, where=lambda r: bool(r["app_id"]) and r.get("queue_usage") != "Transmission")
     warnings: list[str] = []
     renamed: list[dict] = []
     keep_alias = not config.target.eliminate_aliases
