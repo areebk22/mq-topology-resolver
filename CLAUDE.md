@@ -46,7 +46,7 @@ python scripts/run_scenarios.py --large            # regenerates docs/SCENARIO_R
 
 ## Conventions
 
-- Python 3.10+, type hints, pydantic for config, ruff formatting. Engine dependencies: pandas, networkx, pydantic, PyYAML, openpyxl only.
+- Python 3.10+, type hints, pydantic for config, ruff formatting. Engine dependencies: pandas, numpy, networkx, scipy (networkx layouts need it), pydantic, PyYAML, openpyxl only.
 - Every module gets tests in the same change. Acceptance numbers are in the implementation plan.
 - Terms: "QM" = queue manager, "flow" = producer app → consumer app, "policy" = configurable placement rule, "TCI" = Topology Complexity Index.
 - Target QM names: reuse an existing QM name when a group is anchored on it, otherwise the naming template.
