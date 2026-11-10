@@ -30,7 +30,7 @@ A tool that takes an enterprise's as-is IBM MQ inventory (CSV/XLSX) and produces
 
 ```
 src/mqresolver/   engine (no web dependency)     tests/   pytest
-web/              React + Vite + Cytoscape UI     config/  default and example configs
+src/mqresolver/web/  dependency-free canvas UI (no build step)   config/  default and example configs
 scripts/          dataset generator and checker   data/sample/  synthetic inventory
 ```
 
@@ -38,12 +38,15 @@ scripts/          dataset generator and checker   data/sample/  synthetic invent
 python scripts/generate_synthetic_dataset.py --out data/sample/mq_topology_sample.csv
 python scripts/check_dataset_realism.py data/sample/mq_topology_sample.csv
 pytest
-mqresolver run data/sample/mq_topology_sample.csv --out out/      # after phase 6
+mqresolver run data/sample/mq_topology_sample.csv --out out/
+mqresolver serve                                   # UI on http://127.0.0.1:8000
+pytest -m "not slow and not ui"                    # quick tests; plain `pytest` runs everything
+python scripts/run_scenarios.py --large            # regenerates docs/SCENARIO_RESULTS.md
 ```
 
 ## Conventions
 
-- Python 3.11+, type hints, pydantic for config, ruff formatting. Engine dependencies: pandas, networkx, pydantic, PyYAML, openpyxl only.
+- Python 3.10+, type hints, pydantic for config, ruff formatting. Engine dependencies: pandas, networkx, pydantic, PyYAML, openpyxl only.
 - Every module gets tests in the same change. Acceptance numbers are in the implementation plan.
 - Terms: "QM" = queue manager, "flow" = producer app → consumer app, "policy" = configurable placement rule, "TCI" = Topology Complexity Index.
 - Target QM names: reuse an existing QM name when a group is anchored on it, otherwise the naming template.
@@ -51,8 +54,13 @@ mqresolver run data/sample/mq_topology_sample.csv --out out/      # after phase 
 
 ## Reference numbers (sample dataset, seed 42)
 
-438 apps, 194 QMs, 10,937 rows (161 duplicates), 1,376 directed QM links, 914 QM pairs, 1,207 cross-app flows (weight 4,100), 59 apps with no cross-app flow, 25 mission-critical apps.
+400 apps, 189 QMs, 9,964 rows (147 duplicates), 1,284 directed QM links, 875 QM pairs, 25 mission-critical apps.
+Default run: 189 → 12 QMs, 875 → 59 channel pairs, TCI 35.1 → 8.5, validation passes. 5,000 apps solve in about 25 s and need about 720 MB.
 
 ## Delivery
 
-Push to the owner's GitHub, deploy as one Docker container on a free container host, share the link. Check for confidential material before every push.
+Push to the owner's GitHub, deploy with `render.yaml` (Docker, Render free plan: 512 MB, sleeps after 15 min idle), share the onrender.com link. Check for confidential material before every push.
+
+## Why the UI has no framework
+
+The build environment had no npm access, and rendering was what made the earlier UI hang. Positions are computed on the server; `web/graph.js` draws on canvas, batching edges and nodes into a few paths per frame. Measured: 11,688 nodes and 15,910 edges at a median 4.5 ms per frame.

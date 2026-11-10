@@ -9,7 +9,11 @@ Build order is engine first, UI last. Each phase ends with tests that must pass 
 | Problem analysis, design, scoring design | Done (docs) |
 | Sample dataset + generator + realism checker | Done |
 | Louvain feasibility prototype | Done (results in `PROBLEM_ANALYSIS.md` §4) |
-| Engine, API, UI, deployment | Not started |
+| Engine (ingest, policies, scoring, optimiser, generator, validator, pipeline, CLI) | Done, merged |
+| Scenario matrix (8 estates × up to 13 rule sets, 99 runs) | Done, all pass (`docs/SCENARIO_RESULTS.md`) |
+| API (Starlette + uvicorn) | Done, merged |
+| UI (dependency-free canvas) | Done, merged, browser-tested to 5,000 apps |
+| Docker image, Render blueprint, README | Done, merged; not yet deployed |
 
 ## Repository layout
 
@@ -31,7 +35,7 @@ mq-topology-resolver/
 │   ├── config.py  pipeline.py  cli.py
 │   └── api.py
 ├── tests/
-└── web/                           # React UI
+    └── web/                       # canvas UI, served by the API
 ```
 
 ## Phase 0: Scaffold (small)
@@ -83,7 +87,7 @@ mq-topology-resolver/
 
 ## Phase 7: API
 
-- FastAPI endpoints in `DESIGN.md` §6. In-memory processing, upload limit, input validation, no persistence.
+- Starlette endpoints in `DESIGN.md` §6 (FastAPI was not installable in the build environment; Starlette is what FastAPI is built on). In-memory processing, upload limit, input validation, no persistence.
 - **Done when:** API tests pass for inspect, run, sample, bad file, oversized file, and bad config.
 
 ## Phase 8: UI

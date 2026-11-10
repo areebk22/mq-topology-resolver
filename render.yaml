@@ -1,0 +1,13 @@
+# Render Blueprint: New > Blueprint, pick this repository.
+services:
+  - type: web
+    name: mq-topology-resolver
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: MQR_MAX_UPLOAD_MB          # largest inventory a visitor may upload
+        value: "30"
+      - key: MQR_MAX_PARALLEL_RUNS      # keep at 1 on the 512 MB free instance
+        value: "1"

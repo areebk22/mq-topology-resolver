@@ -41,7 +41,7 @@ A good answer sits between them, and where it sits depends on what the enterpris
 
 Louvain community detection maximises modularity: it finds groups of apps that talk more to each other than to the rest. That is exactly "put heavy talkers on one QM". It is fast, deterministic with a seed, and needs no target number of groups.
 
-Measured on the sample dataset (438 apps, 1,207 cross-app flows, as-is 194 QMs and 914 QM pairs):
+Measured during design on an earlier 438-app version of the sample (1,207 cross-app flows, as-is 194 QMs and 914 QM pairs). Results of the finished optimiser on the current sample and seven other estates are in `SCENARIO_RESULTS.md`.
 
 | Approach | QMs | Max apps/QM | Flow staying on one QM | Channel pairs |
 |---|---|---|---|---|
