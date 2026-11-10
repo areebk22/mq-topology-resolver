@@ -5,8 +5,10 @@ Stateless: uploads are parsed in memory, never written to disk and never logged.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import threading
+import traceback
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -24,6 +26,8 @@ from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
 from . import __version__, pipeline, synth
+
+log = logging.getLogger("mqresolver")
 
 WEB = Path(__file__).resolve().parent / "web"
 MAX_UPLOAD_MB = float(os.environ.get("MQR_MAX_UPLOAD_MB", "30"))
@@ -104,6 +108,8 @@ def _error(exc: Exception) -> JSONResponse:
         return JSONResponse({"error": "invalid configuration: " + "; ".join(msgs[:5])}, status_code=400)
     if isinstance(exc, (ValueError, KeyError)):          # InventoryError, PolicyError and friends
         return JSONResponse({"error": str(exc).strip("'\"")}, status_code=400)
+    # Log where it failed, but not the message: messages can quote inventory values.
+    log.error("unexpected %s\n%s", type(exc).__name__, "".join(traceback.format_tb(exc.__traceback__)))
     return JSONResponse({"error": "unexpected server error"}, status_code=500)
 
 
