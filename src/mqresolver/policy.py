@@ -46,6 +46,7 @@ class PolicyResult:
     scope: int
     detail: str
     offenders: list[str]
+    exceptions: list[str] = field(default_factory=list)   # unavoidable: one app alone exceeds a limit
 
     def as_dict(self) -> dict:
         return self.__dict__.copy()
@@ -191,11 +192,18 @@ def evaluate(c: Compiled, qm_apps: dict[str, set[str]], queues_per_qm: dict[str,
                      if p.max_apps_per_qm and len(m) > p.max_apps_per_qm}
         over_q = {q: n - p.max_queues_per_qm for q, n in queues_per_qm.items()
                   if p.max_queues_per_qm and n > p.max_queues_per_qm}
+        # an app cannot be split across QMs, so one app with more queues than the limit is an exception
+        exceptions = sorted(q for q in over_q if len(hosting.get(q, ())) <= 1)
+        for q in exceptions:
+            del over_q[q]
         frac = max(sum(over_apps.values()) / n_apps,
                    sum(over_q.values()) / max(sum(queues_per_qm.values()), 1))
         offenders = sorted(set(over_apps) | set(over_q))
+        detail = f"{len(offenders)} QMs over the limit"
+        if exceptions:
+            detail += f"; {len(exceptions)} single-app QM(s) exceed the queue limit on their own"
         res.append(PolicyResult(p.id, p.type, p.mode, p.weight, min(1.0, frac), len(offenders), len(hosting),
-                                f"{len(offenders)} QMs over the limit", offenders[:25]))
+                                detail, offenders[:25], exceptions[:25]))
     for p in c.qm_count:
         n = len(hosting)
         over = max(0, n - p.max) / p.max if p.max else 0.0
