@@ -167,7 +167,8 @@ class State:
             out.append(float(self.iso_on[i][q]) if size > 1 else 0.0)
         for p in self.soft_cap:
             out.append(float(max(0, size - p.max_apps_per_qm)) if p.max_apps_per_qm else 0.0)
-            out.append(float(max(0, self.qw[q] - p.max_queues_per_qm)) if p.max_queues_per_qm else 0.0)
+            out.append(float(max(0, self.qw[q] - p.max_queues_per_qm))
+                       if p.max_queues_per_qm and len(self.members[q]) > 1 else 0.0)
         return out
 
     def _refresh(self, q: str) -> None:

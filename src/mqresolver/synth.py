@@ -87,13 +87,14 @@ def generate(apps=400, qms=200, flows=750, seed=42, external_rate=0.08, duplicat
     sink_order = ids[:]; R.shuffle(sink_order)
     sink_w = {i: 1 / (r + 1) ** 0.7 for r, i in enumerate(sink_order)}
     flows = set()
-    while len(flows) < a.flows - 34:
+    n_self = min(34, len(ids) // 4)                         # apps with internal work queues
+    while len(flows) < a.flows - n_self:
         p = pick(ids, prod_w)
         cands = [c for c in ids if c != p and apps[c]["dom"] == apps[p]["dom"]] if R.random() < 0.7 else ids
         cands = [c for c in cands if c != p]
         if cands:
             flows.add((p, pick(cands, [sink_w[c] for c in cands])))
-    flows |= {(i, i) for i in R.sample(ids, 34)}            # apps with internal work queues
+    flows |= {(i, i) for i in R.sample(ids, n_self)}
 
     rows = []
 
