@@ -1,0 +1,23 @@
+# Original company-format material. Never commit.
+_reference/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Node
+node_modules/
+web/dist/
+
+# Run outputs and local data
+out/
+data/*
+!data/sample/
+.env
+.DS_Store
