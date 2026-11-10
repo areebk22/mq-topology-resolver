@@ -15,7 +15,7 @@ HOPS = {"Local": 1, "Alias": 2, "Remote": 5}
 EXTERNAL = None  # marker for an endpoint outside the inventory
 
 
-@dataclass
+@dataclass(slots=True)
 class LogicalQueue:
     key: tuple[str, str]                    # (home QM, queue name): where messages land
     producers: dict[str, list[tuple[str, str]]] = field(default_factory=dict)  # app -> [(qm, type)]
@@ -35,7 +35,7 @@ class LogicalQueue:
         return self.key[0]
 
 
-@dataclass
+@dataclass(slots=True)
 class Path:
     producer: Optional[str]
     consumer: Optional[str]
@@ -102,30 +102,61 @@ def _mode(values: list[str]) -> tuple[str, bool]:
     return best, len(c) > 1
 
 
+MODEL_COLUMNS = ["queue_name", "queue_type", "queue_manager", "app_id", "app_name", "app_role", "producer_app_name",
+                 "consumer_app_name", "remote_queue_manager", "remote_queue_name", "alias_target_queue", "queue_usage"]
+
+
+class Records:
+    """Re-iterable rows of a frame as dicts, built one at a time.
+
+    Equivalent to df.to_dict("records") for reading, without holding every row dict in memory.
+    """
+
+    def __init__(self, df: pd.DataFrame, cols: Optional[list[str]] = None, where=None):
+        self.cols = list(cols if cols is not None else df.columns)
+        self.data = [df[c].tolist() for c in self.cols]
+        self.where = where
+
+    def __iter__(self):
+        cols = self.cols
+        for t in zip(*self.data):
+            r = dict(zip(cols, t))
+            if self.where is None or self.where(r):
+                yield r
+
+
+def _modes(df: pd.DataFrame, col: str) -> tuple[dict[str, str], set[str]]:
+    """Most frequent value of `col` per app (ties: smallest value), and the apps with more than one value."""
+    if col not in df.columns:
+        return {}, set()
+    g = df.groupby(["app_id", col], sort=False).size().reset_index(name="__n")
+    g = g.sort_values(["app_id", "__n", col], ascending=[True, False, True], kind="stable")
+    modes = dict(zip(g.drop_duplicates("app_id")["app_id"], g.drop_duplicates("app_id")[col]))
+    counts = g["app_id"].value_counts()
+    return modes, set(counts[counts > 1].index)
+
+
 def build_model(df: pd.DataFrame, attribute_columns: list[str]) -> Model:
-    recs = df.to_dict("records")
+    # Only the topology columns become per-row dicts; attributes are aggregated by pandas.
+    # Converting every column of a large inventory to dicts costs hundreds of MB.
+    cols = [c for c in MODEL_COLUMNS if c in df.columns]
+    recs = Records(df, cols)
     issues: dict[str, list] = defaultdict(list)
 
     # ---- applications ---------------------------------------------------
-    names: dict[str, list[str]] = defaultdict(list)
-    attr_vals: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
-    for r in recs:
-        a = r["app_id"]
-        if not a:
-            continue
-        names[a].append(r.get("app_name", ""))
-        for col in attribute_columns:
-            attr_vals[a][col].append(r.get(col, ""))
+    app_rows = df[df["app_id"] != ""]
+    name_of, _ = _modes(app_rows, "app_name")
     apps: dict[str, dict] = {}
-    for a in sorted(names):
-        name, _ = _mode(names[a])
+    per_attr = {col: _modes(app_rows, col) for col in attribute_columns}
+    for a in sorted(set(app_rows["app_id"])):
         attrs = {}
         for col in attribute_columns:
-            v, conflict = _mode(attr_vals[a][col])
-            attrs[col] = v
-            if conflict:
+            modes, conflicts = per_attr[col]
+            attrs[col] = modes.get(a, "")
+            if a in conflicts:
                 issues["attribute_conflicts"].append(f"{a}: {col}")
-        apps[a] = {"name": name, "attrs": attrs}
+        apps[a] = {"name": name_of.get(a, ""), "attrs": attrs}
+    del app_rows
     name_to_ids: dict[str, list[str]] = defaultdict(list)
     for a, info in apps.items():
         if info["name"]:

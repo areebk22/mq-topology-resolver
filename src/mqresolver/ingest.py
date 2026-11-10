@@ -70,7 +70,9 @@ def read_table(source: Any, filename: Optional[str] = None) -> pd.DataFrame:
     if df.empty or len(df.columns) < 2:
         raise InventoryError("the file has no data rows")
     df.columns = [str(c).strip() for c in df.columns]
-    return df.fillna("").astype(str).apply(lambda s: s.str.strip())
+    for c in df.columns:                 # column by column, so only one column is copied at a time
+        df[c] = df[c].fillna("").astype(str).str.strip()
+    return df
 
 
 def propose_mapping(columns: list[str]) -> dict[str, str]:

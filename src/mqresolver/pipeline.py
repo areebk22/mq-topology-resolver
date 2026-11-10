@@ -84,8 +84,8 @@ def run(source: Any, filename: Optional[str] = None, mapping: Optional[dict] = N
     result = optimise(model, base, comp, cfg)
     target = generate(inv, model, result, cfg)
     gateways = {result.gateway_map.get(g, g) for g in model.external_gateways()}
-    report = validate(model, target.df, target.channels, comp, cfg, gateways)
     tmodel = build_model(target.df, model.attr_names)
+    report = validate(model, target.df, target.channels, comp, cfg, gateways, target_model=tmodel)
 
     # ---- scores: same formula for every topology ------------------------------
     pol_as_is = evaluate(comp, model.qm_apps, model.queues_per_qm(), model.app_qms)
@@ -174,9 +174,8 @@ def run(source: Any, filename: Optional[str] = None, mapping: Optional[dict] = N
         status_t = {q: ("reused" if q in as_is_qms else "new") for q in tmodel.qms}
         status_a = {q: ("kept" if q in target_qms else "retired") for q in model.qm_apps}
         g_as_is = qm_graph(model, cfg.advanced.seed, status=status_a)
-        init = {n["id"]: (n["x"], n["y"]) for n in g_as_is["nodes"]}
         bundle["graph"] = {"as_is": g_as_is,
-                           "target": qm_graph(tmodel, cfg.advanced.seed, init=init, status=status_t),
+                           "target": qm_graph(tmodel, cfg.advanced.seed, status=status_t),
                            "attributes": [a for a in model.attr_names
                                           if len({i["attrs"].get(a) for i in model.apps.values()}) <= 40]}
     bundle["seconds"] = round(time.time() - t0, 2)

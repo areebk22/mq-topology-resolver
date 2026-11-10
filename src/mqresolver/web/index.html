@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MQ Topology Resolver</title>
+  <meta name="description" content="Turn an as-is IBM MQ inventory into a simpler target topology, with a complexity score and before/after graphs.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="5" cy="6" r="2.4"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="12" r="3.2"/><path d="M7 7l9 4M7 17l9-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>MQ Topology Resolver</span>
+    </div>
+    <p class="bar-status" id="status" role="status" aria-live="polite"></p>
+    <details class="downloads" id="downloads">
+      <summary class="btn" aria-disabled="true">Download</summary>
+      <div class="menu" id="download-menu"></div>
+    </details>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" id="rail" aria-label="Settings">
+      <section class="block" id="sec-source">
+        <h2>Inventory</h2>
+        <div class="drop" id="drop">
+          <p>Load a CSV or Excel export of your queue definitions, or try the bundled synthetic estate.</p>
+          <div class="row">
+            <button class="btn" id="pick-file" type="button">Upload file</button>
+            <button class="btn ghost" id="use-sample" type="button">Use sample estate</button>
+          </div>
+          <input type="file" id="file" accept=".csv,.xlsx,.xlsm,.txt" hidden>
+        </div>
+        <div id="source-info"></div>
+      </section>
+
+      <section class="block" id="sec-mapping" hidden>
+        <h2>Columns</h2>
+        <div id="mapping"></div>
+      </section>
+
+      <section class="block" id="sec-profile" hidden>
+        <h2>Priority</h2>
+        <div id="profile"></div>
+      </section>
+
+      <section class="block" id="sec-rules" hidden>
+        <h2>Placement rules</h2>
+        <p class="hint">Hard rules always hold. Soft rules are traded against simplicity. Off rules are ignored.</p>
+        <div id="rules"></div>
+      </section>
+
+      <section class="block" id="sec-options" hidden>
+        <details>
+          <summary><h2>Target options</h2></summary>
+          <div id="options"></div>
+        </details>
+      </section>
+
+      <div class="run" id="run-box" hidden>
+        <button class="btn primary" id="run" type="button">Simplify topology</button>
+        <p class="hint" id="run-note"></p>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <div class="empty" id="empty">
+        <h1>See your MQ estate before and after</h1>
+        <p>Load an inventory on the left. The tool places every application on one queue manager, keeps the rules you set,
+          and shows the as-is and target topology side by side with a complexity score you can check.</p>
+        <button class="btn primary" id="empty-sample" type="button">Run the sample estate</button>
+      </div>
+
+      <div id="results" hidden>
+        <nav class="tabs" role="tablist" aria-label="Results">
+          <button role="tab" data-tab="topology" aria-selected="true">Topology</button>
+          <button role="tab" data-tab="score" aria-selected="false">Score</button>
+          <button role="tab" data-tab="rules" aria-selected="false">Rules</button>
+          <button role="tab" data-tab="apps" aria-selected="false">Applications</button>
+          <button role="tab" data-tab="checks" aria-selected="false">Checks</button>
+        </nav>
+
+        <section class="tab" id="tab-topology" role="tabpanel">
+          <p class="headline" id="headline"></p>
+          <div class="toolbar" id="toolbar">
+            <div class="seg" id="view-mode" role="group" aria-label="Show">
+              <button type="button" data-v="qm" aria-pressed="true">Queue managers</button>
+              <button type="button" data-v="app" aria-pressed="false">Applications</button>
+            </div>
+            <label>Colour <select id="colour"></select></label>
+            <label class="check"><input type="checkbox" id="show-edges" checked> Channels</label>
+            <label>Hide channels under <input type="range" id="min-weight" min="1" max="20" value="1"> <output id="min-weight-out">1</output> queues</label>
+            <label class="check"><input type="checkbox" id="link-cams"> Link pan and zoom</label>
+            <form id="find" class="find" role="search"><input type="search" id="find-q" placeholder="Find app or queue manager" aria-label="Find app or queue manager"></form>
+            <button class="btn ghost small" id="reset-view" type="button">Reset view</button>
+          </div>
+          <div class="legend" id="legend"></div>
+          <div class="panes">
+            <figure class="pane">
+              <figcaption id="cap-as-is"></figcaption>
+              <div class="canvas-wrap"><canvas id="cv-as-is" tabindex="0" aria-label="As-is topology graph"></canvas></div>
+            </figure>
+            <figure class="pane">
+              <figcaption id="cap-target"></figcaption>
+              <div class="canvas-wrap"><canvas id="cv-target" tabindex="0" aria-label="Target topology graph"></canvas></div>
+            </figure>
+          </div>
+          <div class="detail" id="detail">
+            <p class="hint">Click a queue manager or application to see where its applications go. Scroll to zoom, drag to pan.</p>
+          </div>
+        </section>
+
+        <section class="tab" id="tab-score" role="tabpanel" hidden></section>
+        <section class="tab" id="tab-rules" role="tabpanel" hidden></section>
+        <section class="tab" id="tab-apps" role="tabpanel" hidden></section>
+        <section class="tab" id="tab-checks" role="tabpanel" hidden></section>
+      </div>
+    </main>
+  </div>
+  <div class="tooltip" id="tooltip" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

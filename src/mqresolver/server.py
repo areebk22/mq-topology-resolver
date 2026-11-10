@@ -26,8 +26,8 @@ from starlette.staticfiles import StaticFiles
 from . import __version__, pipeline, synth
 
 WEB = Path(__file__).resolve().parent / "web"
-MAX_UPLOAD_MB = float(os.environ.get("MQR_MAX_UPLOAD_MB", "25"))
-MAX_PARALLEL = int(os.environ.get("MQR_MAX_PARALLEL_RUNS", "2"))
+MAX_UPLOAD_MB = float(os.environ.get("MQR_MAX_UPLOAD_MB", "30"))
+MAX_PARALLEL = int(os.environ.get("MQR_MAX_PARALLEL_RUNS", "1"))
 _slots = threading.BoundedSemaphore(MAX_PARALLEL)
 
 
@@ -161,13 +161,13 @@ class SecurityHeaders:
 
 
 def create_app() -> Starlette:
-    routes = [
-        Route("/api/health", health),
-        Route("/api/sample", sample),
-        Route("/api/inspect", inspect, methods=["POST"]),
-        Route("/api/run", run, methods=["POST"]),
-        Route("/", index),
+    api = [
+        Route("/health", health),
+        Route("/sample", sample),
+        Route("/inspect", inspect, methods=["POST"]),
+        Route("/run", run, methods=["POST"]),
     ]
+    routes = [Mount("/api", routes=api), Route("/", index)]
     if WEB.exists():
         routes.append(Mount("/", StaticFiles(directory=WEB), name="web"))
     return Starlette(routes=routes, middleware=[Middleware(GZipMiddleware, minimum_size=2048, compresslevel=6),
