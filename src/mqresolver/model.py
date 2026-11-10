@@ -86,6 +86,16 @@ class Model:
         return {q for q in self.qms if q not in self.qm_apps}
 
 
+def queue_key(r: dict) -> tuple[str, str]:
+    """Where messages put to this row's queue really land: (QM, queue name)."""
+    qm, qname, qtype = r["queue_manager"], r["queue_name"], r["queue_type"]
+    if qtype == "Remote" and r.get("remote_queue_manager"):
+        return (r["remote_queue_manager"], r.get("remote_queue_name") or qname)
+    if qtype == "Alias":
+        return (qm, r.get("alias_target_queue") or qname)
+    return (qm, qname)
+
+
 def _mode(values: list[str]) -> tuple[str, bool]:
     c = Counter(values)
     best = sorted(c.items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
@@ -150,19 +160,12 @@ def build_model(df: pd.DataFrame, attribute_columns: list[str]) -> Model:
         qms.add(qm)
         if r.get("queue_usage") == "Transmission":
             continue
-        if qtype == "Remote" and r.get("remote_queue_manager"):
-            rqm = r["remote_queue_manager"]
-            key = (rqm, r.get("remote_queue_name") or qname)
-            if rqm != qm:
-                links.add((qm, rqm))
-                qms.add(rqm)
-        elif qtype == "Alias":
-            tgt = r.get("alias_target_queue") or qname
-            key = (qm, tgt)
-            if r.get("alias_target_queue") and (qm, tgt) not in definitions:
-                issues["dangling_aliases"].append(f"{qm}/{qname} -> {tgt}")
-        else:
-            key = (qm, qname)
+        key = queue_key(r)
+        if qtype == "Remote" and key[0] != qm:
+            links.add((qm, key[0]))
+            qms.add(key[0])
+        elif qtype == "Alias" and r.get("alias_target_queue") and key not in definitions:
+            issues["dangling_aliases"].append(f"{qm}/{qname} -> {key[1]}")
         if not a:
             continue
         app_qms[a].add(qm)
