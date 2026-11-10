@@ -1,0 +1,11 @@
+# For an export whose headers differ from the canonical names (see docs/DATA_SCHEMA.md).
+# Left: canonical name. Right: the header in your file. Unlisted columns are matched automatically
+# where possible and always written back unchanged.
+columns:
+  queue_name: "Queue"
+  queue_type: "Type"
+  queue_manager: "QMgr"
+  app_id: "App Code"
+  app_role: "Application Role"
+values:
+  app_role: {"TBD*": "Unknown"}

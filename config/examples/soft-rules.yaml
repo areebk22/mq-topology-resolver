@@ -1,0 +1,9 @@
+# Preferences, not laws: the optimiser trades these against simplicity.
+profile: balanced
+policies:
+  - {type: capacity, max_apps_per_qm: 40, mode: hard}
+  - {type: isolate, when: {app_criticality: Mission Critical}, mode: soft, weight: 3}
+  - {type: homogeneous, attribute: app_business_domain, mode: soft}
+target:
+  eliminate_aliases: true
+  gateway_qms: [QMEXTGW01]

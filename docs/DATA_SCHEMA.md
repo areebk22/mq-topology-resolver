@@ -72,17 +72,17 @@ values:                       # optional value translation
 
 ## 4. Sample dataset
 
-`data/sample/mq_topology_sample.csv` (and `.xlsx`), produced by `scripts/generate_synthetic_dataset.py --seed 42`. Fully synthetic.
+`data/sample/mq_topology_sample.csv` (and `.xlsx`), produced by `scripts/generate_synthetic_dataset.py` (400 apps, 200 QMs, seed 42). Fully synthetic.
 
 | Fact | Value |
 |---|---|
-| Rows / columns | 10,937 / 26 (161 exact duplicates) |
-| Apps / QMs in use | 438 / 194 |
-| Queue types | Local 50%, Remote 35%, Alias 15% |
-| QMs per app | mean 2.45, max 36 |
-| Directed QM links / QM pairs | 1,376 / 914 (51% two-way) |
-| App flows | 1,367 (76 to or from external partners) |
-| Transmission queue rows | 807 of 1,376 needed (inventory deliberately incomplete) |
+| Rows / columns | 9,964 / 26 (147 exact duplicates) |
+| Apps / QMs in use | 400 / 189 |
+| Queue types | Local 50%, Remote 36%, Alias 15% |
+| QMs per app | mean 2.22, max 11 |
+| Directed QM links / QM pairs | 1,284 / 875 (47% two-way) |
+| App flows | 1,247 (59 to or from external partners) |
+| Transmission queue rows | 752 of 1,284 needed (inventory deliberately incomplete) |
 | Mission-critical apps | 25 |
 | Unknown-role rows | 32 |
 

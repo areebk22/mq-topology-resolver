@@ -29,7 +29,7 @@ One Python package (`mqresolver`) holds all logic and has no web dependency. A C
 | `validate` | Independent check of structural rules S1–S6 and all hard policies. Shares no code with `generate`. |
 | `score` | Topology Complexity Index for any topology |
 | `explain` | Decision log: for each app, where it went and why, and which policy forced it |
-| `graph` | Cytoscape-style JSON for as-is and target |
+| `graph` | Queue-manager-level graph JSON with server-computed positions for as-is and target |
 
 ## 2. Rules: structural vs policy
 
@@ -154,7 +154,7 @@ mqresolver score inventory.csv          # score any topology file
 mqresolver validate out/target_topology.csv --config config.yaml
 ```
 
-**API (FastAPI, stateless)**
+**API (Starlette + uvicorn, stateless; mounted under `/api`)**
 
 | Endpoint | Purpose |
 |---|---|
@@ -165,7 +165,7 @@ mqresolver validate out/target_topology.csv --config config.yaml
 
 Uploads are processed in memory and never written to disk or logged. Upload size is limited.
 
-**UI (React + TypeScript + Vite + Cytoscape.js)**, built after the engine is proven:
+**UI (plain JavaScript modules and a custom canvas renderer, no build step)**, built after the engine is proven. Positions come from the server (each connected component laid out separately, then packed), so the browser only draws:
 
 1. **Load**: upload a file or use the sample. Confirm the column mapping.
 2. **Configure**: profile, policy switches, capacity numbers. Advanced options collapsed.
@@ -177,8 +177,8 @@ Uploads are processed in memory and never written to disk or logged. Upload size
 ## 7. Technology and deployment
 
 - **Engine**: Python 3.11+, pandas, networkx (its built-in Louvain, no extra library), pydantic, PyYAML, openpyxl. pytest for tests.
-- **API**: FastAPI + uvicorn, also serving the built UI.
-- **Deployment**: one Docker image. Push to GitHub, connect the repository to a container host with a free tier (Render is the first choice, Hugging Face Spaces the fallback), and share the URL it gives. No database and no secrets. Free instances usually sleep when idle, so the first request after a pause is slow. Check the host's current limits before relying on it.
+- **API**: Starlette + uvicorn, also serving the UI files from the package.
+- **Deployment**: one Docker image. Push to GitHub, connect the repository to a container host with a free tier (Render; as of September 2026 Hugging Face requires a paid plan for new Docker Spaces), and share the URL it gives. No database and no secrets. Free instances usually sleep when idle, so the first request after a pause is slow. Check the host's current limits before relying on it.
 
 ## 8. Decisions and reasons
 

@@ -1,0 +1,18 @@
+# Strict placement: rules first, simplicity second.
+profile: compliance
+policies:
+  - {id: capacity, type: capacity, max_apps_per_qm: 30, max_queues_per_qm: 1500, mode: hard}
+  - id: isolate-mission-critical
+    type: isolate
+    when: {app_criticality: Mission Critical}
+    mode: hard
+  - id: one-domain-per-qm
+    type: homogeneous
+    attribute: app_business_domain
+    mode: hard
+  - id: regulated-apart
+    type: separate
+    attribute: app_regulated
+    mode: soft
+    weight: 2
+  - {id: budget, type: qm_count, max: 80, mode: soft}
