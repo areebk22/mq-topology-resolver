@@ -1,0 +1,12 @@
+# Default configuration. Every key is optional.
+profile: balanced            # balanced | consolidate | resilient | compliance
+
+policies:
+  - id: capacity
+    type: capacity
+    max_apps_per_qm: 40
+    mode: hard
+
+target:
+  eliminate_aliases: true
+  reuse_qm_names: true
