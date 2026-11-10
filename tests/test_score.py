@@ -43,7 +43,7 @@ def test_degenerate_cases_exact():
     assert tci_of(empty, W) == 0
     best = ScoreInputs(10, 10, 50, 50, 0, 20, 50, 50, 0.1, 0)
     assert dimensions(best) == {"routing_depth": 0, "app_sprawl": 0, "channel_load": 0, "object_overhead": 0,
-                                "blast_radius": 0.1, "policy_violations": 0}
+                                "qm_footprint": 0, "blast_radius": 0.1, "policy_violations": 0}
 
 
 def test_anchors_lose_to_a_sensible_partition(sample_model):
@@ -73,6 +73,7 @@ def test_single_qm_and_per_app_dimension_values(sample_model):
     assert d1["routing_depth"] < 0.05          # only external-partner traffic leaves the QM
     dn = dimensions(inputs_from_assignment(base, {a: f"Q_{a}" for a in base.apps}))
     assert dn["channel_load"] == 1 and dn["routing_depth"] > 0.5 and dn["blast_radius"] < 0.05
+    assert dn["qm_footprint"] == 1 and d1["qm_footprint"] < 0.01
 
 
 def test_size_independence(small_df):
@@ -86,7 +87,7 @@ def test_size_independence(small_df):
     m2 = build_model(two.df, two.attribute_columns)
     assert len(m2.apps) == 2 * len(m1.apps)
     d1, d2 = dimensions(inputs_from_model(m1, 0)), dimensions(inputs_from_model(m2, 0))
-    for k in ("routing_depth", "app_sprawl", "channel_load", "object_overhead"):
+    for k in ("routing_depth", "app_sprawl", "channel_load", "object_overhead", "qm_footprint"):
         assert d2[k] == pytest.approx(d1[k], abs=1e-9), k
     assert d2["blast_radius"] == pytest.approx(d1["blast_radius"] / 2)
     assert abs(tci_of(inputs_from_model(m1, 0), W) - tci_of(inputs_from_model(m2, 0), W)) < 2
